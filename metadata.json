@@ -1,0 +1,14 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Id": "local.spotify.panel",
+        "Name": "Spotify Controls",
+        "Name[ru]": "Управление Spotify",
+        "Description": "Track, playback and volume controls for Spotify",
+        "Description[ru]": "Название трека, воспроизведение и громкость Spotify",
+        "Icon": "media-playback-start",
+        "Category": "Multimedia",
+        "Version": "1.0.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}
