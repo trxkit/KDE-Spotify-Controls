@@ -26,6 +26,10 @@ PlasmoidItem {
     readonly property string trackTitle: spotify?.track ||
         (spotify ? qsTr("Spotify") : qsTr("Spotify закрыт"))
 
+    readonly property string artistAndTrack: spotify?.artist && spotify?.track
+        ? qsTr("%1 - %2").arg(spotify.artist).arg(trackTitle)
+        : trackTitle
+
     Mpris.Mpris2Model { id: mediaPlayers }
 
     Instantiator {
@@ -40,51 +44,77 @@ PlasmoidItem {
         }
     }
 
-    toolTipMainText: trackTitle
+    toolTipMainText: artistAndTrack
+    toolTipTextFormat: Text.PlainText
     toolTipSubText: spotify
-        ? [spotify.artist, qsTr("Громкость Spotify %1%").arg(Math.round(spotify.volume * 100))]
-            .filter(Boolean).join(" · ")
+        ? qsTr("Громкость Spotify %1%").arg(Math.round(spotify.volume * 100))
         : qsTr("Откройте приложение Spotify")
 
     fullRepresentation: Item {
         id: controls
 
         Layout.minimumWidth: Kirigami.Units.gridUnit * 2
-        Layout.preferredWidth: Kirigami.Units.gridUnit * 11
+        Layout.preferredWidth: verticalPanel ? Layout.minimumWidth : Kirigami.Units.gridUnit * 15
         Layout.minimumHeight: Kirigami.Units.gridUnit
         Layout.preferredHeight: Kirigami.Units.gridUnit * 2
 
         readonly property bool verticalPanel: Plasmoid.formFactor === PlasmaCore.Types.Vertical
 
-        RowLayout {
+        PlasmaComponents.ToolButton {
             anchors.fill: parent
-            anchors.leftMargin: Kirigami.Units.smallSpacing
-            anchors.rightMargin: Kirigami.Units.smallSpacing
-            spacing: Kirigami.Units.smallSpacing
+            padding: Kirigami.Units.smallSpacing
+            enabled: root.canToggle
+            Accessible.name: root.playing ? qsTr("Пауза Spotify") : qsTr("Воспроизвести Spotify")
+            Accessible.description: root.artistAndTrack
 
-            PlasmaComponents.ToolButton {
-                Layout.alignment: Qt.AlignVCenter
-                Layout.preferredWidth: Math.min(implicitWidth, controls.width)
-                Layout.preferredHeight: Math.min(implicitHeight, controls.height)
-                icon.name: root.playing ? "media-playback-pause" : "media-playback-start"
-                Accessible.name: root.playing ? qsTr("Пауза Spotify") : qsTr("Воспроизвести Spotify")
-                enabled: root.canToggle
-                onClicked: {
-                    if (root.playing)
-                        root.spotify.Pause()
-                    else
-                        root.spotify.Play()
-                }
+            onClicked: {
+                if (root.playing)
+                    root.spotify.Pause()
+                else
+                    root.spotify.Play()
             }
 
-            PlasmaComponents.Label {
-                visible: !controls.verticalPanel
-                Layout.fillWidth: true
-                Layout.minimumWidth: 0
-                text: root.trackTitle
-                textFormat: Text.PlainText
-                elide: Text.ElideRight
-                maximumLineCount: 1
+            contentItem: RowLayout {
+                spacing: Kirigami.Units.smallSpacing
+
+                Kirigami.Icon {
+                    Layout.alignment: Qt.AlignCenter
+                    Layout.preferredWidth: Math.min(Kirigami.Units.iconSizes.smallMedium, parent.height)
+                    Layout.preferredHeight: Layout.preferredWidth
+                    source: root.playing ? "media-playback-pause" : "media-playback-start"
+                }
+
+                Item {
+                    visible: !controls.verticalPanel && !!root.spotify?.track
+                    Layout.preferredWidth: Math.min(Kirigami.Units.iconSizes.medium, parent.height)
+                    Layout.preferredHeight: Layout.preferredWidth
+
+                    Kirigami.Icon {
+                        anchors.fill: parent
+                        source: "media-optical-audio"
+                        visible: albumArt.status !== Image.Ready
+                    }
+
+                    Image {
+                        id: albumArt
+                        anchors.fill: parent
+                        source: root.spotify?.artUrl || ""
+                        sourceSize.width: width * Screen.devicePixelRatio
+                        sourceSize.height: height * Screen.devicePixelRatio
+                        fillMode: Image.PreserveAspectCrop
+                        asynchronous: true
+                    }
+                }
+
+                PlasmaComponents.Label {
+                    visible: !controls.verticalPanel
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+                    text: root.artistAndTrack
+                    textFormat: Text.PlainText
+                    elide: Text.ElideRight
+                    maximumLineCount: 1
+                }
             }
         }
 
